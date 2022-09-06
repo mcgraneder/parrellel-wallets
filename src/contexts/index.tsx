@@ -198,7 +198,6 @@ import {
     const classes = { ...defaultClasses, ...pickerClasses };
   
     const connectors = config.chains[chain];
-    console.log(connectors)
   
     // Current wallet being activated
     const [name, setName] = React.useState("");

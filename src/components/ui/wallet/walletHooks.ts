@@ -52,6 +52,8 @@ export const useWallet: UseWallet = (chain) => {
   const wallet = resolveWalletByProvider(provider);
 
   const deactivateConnector = useCallback(() => {
+    console.log("deactibating")
+    console.log(enabledChains[chain]?.connector)
     enabledChains[chain]?.connector.deactivate();
   }, [enabledChains, chain]);
 

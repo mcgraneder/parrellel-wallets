@@ -5,6 +5,8 @@ import { RenNetwork } from "@renproject/utils";
 import { renNetworkToEthNetwork, ethNetworkToRenNetwork } from "../../utils/networkMapping";
 import { Wallet } from "./walletsConfig";
 import { WalletPickerConfig } from "@renproject/multiwallet-ui";
+import { EthereumWalletConnectConnector } from "@renproject/multiwallet-ethereum-walletconnect-connector";
+import { EthereumMEWConnectConnector } from "@renproject/multiwallet-ethereum-mewconnect-connector";
 
 // const isEnabled = (chain: Chain, wallet: Wallet) => {
 //   const entries = env.ENABLED_EXTRA_WALLETS;
@@ -29,15 +31,39 @@ import { WalletPickerConfig } from "@renproject/multiwallet-ui";
 export const getMultiwalletConfig = (network: RenNetwork): WalletPickerConfig<unknown, string> => {
   return {
     chains: {
-      [Chain.Ethereum]: [
+           [Chain.Ethereum]: [
         {
           name: Wallet.MetaMask,
           logo: "",
           connector: new EthereumInjectedConnector({
-            debug: true,
+            debug: false,
             networkIdMapper: ethNetworkToRenNetwork,
           }),
         },
+        {
+          name: Wallet.MyEtherWallet,
+          logo: "",
+          connector: new EthereumMEWConnectConnector({
+            debug: false,
+            rpc: {
+              42: `wss://kovan.infura.io/ws/v3/${"62302e9d9b074d8baa2344a5550b6cc9"}`,
+              1: `wss://mainnet.infura.io/ws/v3/${"62302e9d9b074d8baa2344a5550b6cc9"}`,
+            },
+            chainId: network === RenNetwork.Mainnet ? 1 : 42,
+          }) as any,
+        },
+        {
+                  name: Wallet.WalletConnect,
+                  logo: "",
+                  connector: new EthereumWalletConnectConnector({
+                    rpc: {
+                      42: `https://kovan.infura.io/v3/${"62302e9d9b074d8baa2344a5550b6cc9"}`,
+                      1: `wss://mainnet.infura.io/ws/v3/${"62302e9d9b074d8baa2344a5550b6cc9"}`,
+                    },
+                    qrcode: true,
+                    debug: true,
+                  }),
+                },
       ],
       [Chain.Solana]: [
         {

@@ -43,6 +43,7 @@ const MainLayout:  FunctionComponent<any> = ({
     // useSetNetworkFromParam()
     useSyncWalletNetwork()
     const wallets = useMultiwallet()
+    const { activateConnector } = useMultiwallet()
     // console.log(wallets)
     const { network } = useSelector($network)
     const { chain, pickerOpened } = useSelector($wallet)
@@ -62,6 +63,33 @@ const MainLayout:  FunctionComponent<any> = ({
       );
     const [openWalletModal, setOpenWalletModal] = useState<boolean>(false)
     const toggleWalletModal = () => setOpenWalletModal(!openWalletModal) 
+
+    useEffect(() => {
+      const activeEthereumWallets = getMultiwalletConfig(network).chains[Chain.Ethereum]
+      const activeSolanaWallets = getMultiwalletConfig(network).chains[Chain.Solana]
+      
+      activeEthereumWallets.forEach((wallet, index = 0) => {
+        if (localStorage.getItem("providerEthereum") === wallet.name) {
+          activateConnector(
+            chain, 
+            getMultiwalletConfig(network).chains[chain][index].connector, 
+            wallet.name
+          )
+          index ++
+        }
+      })
+      //create seperate providers
+      activeSolanaWallets.forEach((wallet, index = 0) => {
+        if (localStorage.getItem("providerSolana") === wallet.name) {
+          activateConnector(
+            chain, 
+            getMultiwalletConfig(network).chains[chain][index].connector, 
+            wallet.name
+          )
+          index ++
+        }
+      })
+    }, []);
 
     const handleWalletPickerClose = useCallback(() => {
         dispatch(setPickerOpened(false));
@@ -107,7 +135,6 @@ const MainLayout:  FunctionComponent<any> = ({
           targetNetwork: network,
           chain,
           onClose: handleWalletPickerClose,
-          pickerClasses,
           // DefaultInfo: DebugComponentProps,
           ConnectingInfo: WalletConnectingInfo,
           WrongNetworkInfo: WalletWrongNetworkInfo,
@@ -119,76 +146,9 @@ const MainLayout:  FunctionComponent<any> = ({
         return options;
       }, [ pickerClasses, handleWalletPickerClose, network, chain]);
 
-      const ToolbarMenu = (
-        <>
-          <div>
-           <div className={styles.desktopMenu}>
-            {/* <ClosableMenuIconButton
-              Icon={TxHistoryIcon}
-              opened={txHistoryOpened}
-              className={styles.desktopTxHistory}
-              onClick={handleTxHistoryToggle}
-              title="Transaction History"
-            /> */}
-            {Object.keys(getMultiwalletConfig(network).chains).map((chain) => {
-
-                const result = wallets.enabledChains[chain]?.provider && wallets.enabledChains[chain]?.account
-                const walle = wallets.enabledChains[chain]
-                return (
-                <React.Fragment key={wallet}>
-            <WalletConnectionStatusButton
-               
-              onClick={() => handleWalletButtonClick(chain as Chain)}
-              hoisted={false}
-              status={walle?.status ? walle?.status : "Disconnected"}
-              account={walle?.account ? walle?.account : ""}
-              wallet={wallet}
-              chain={chain as Chain}
-            /></React.Fragment>)})}
-            <WalletPickerModal open={pickerOpened} options={walletPickerOptions} />
-          </div>
-          <div className={styles.mobileMenu}>
-            <IconButton
-              aria-label="show more"
-              aria-controls="main-menu-mobile"
-              aria-haspopup="true"
-              onClick={handleMobileMenuOpen}
-              color="inherit"
-            >
-              {/* <MenuIcon /> */}
-            </IconButton>
-          </div>
-            {children}
-        </div>
-        </>
-      );
-
-      const WalletMenu = (
-        <>
-            <Menu
-            id="wallet-menu"
-            getContentAnchorEl={null}
-            anchorEl={walletMenuAnchor}
-            keepMounted
-            open={Boolean(walletMenuAnchor)}
-            onClose={handleWalletMenuClose}
-            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            transformOrigin={{ vertical: "top", horizontal: "left" }}
-            >
-            <MenuItem onClick={handleDisconnectWallet}>
-                <Typography color="error">{"Disconnect"}</Typography>
-            </MenuItem>
-            {wallet === Wallet.Phantom && (
-                <MenuItem onClick={handleRefreshAccounts}>
-                <Typography>Refresh accounts</Typography>
-                </MenuItem>
-            )}
-            </Menu>
-        </>
-      );
     return (
         <>
-        {openWalletModal && <WalletConnectModal/>}
+        {openWalletModal && <WalletConnectModal open={pickerOpened} options={walletPickerOptions} network={network} setChain={handleWalletButtonClick} disconnect={handleDisconnectWallet}/>}
         <div className="flex items-center justify-center h-screen">
           <PrimaryButton onClick={toggleWalletModal}>Select Wallets</PrimaryButton>
         </div>

@@ -12,6 +12,11 @@ module.exports = {
                     fallback: {
                         stream: require.resolve("stream-browserify"),
                         buffer: require.resolve("buffer"),
+                        assert: require.resolve("assert/"),
+                        crypto: require.resolve("crypto-browserify"),
+                        url: require.resolve("url/"),
+                        http: require.resolve("stream-http"),
+                        https: require.resolve("https-browserify")
                     },
                 },
                 // Ignore errors thrown by @terra-money/terra.proto.

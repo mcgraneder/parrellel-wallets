@@ -12,7 +12,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
-  <React.StrictMode>
+  
     <MultiwalletProvider>
     <Provider store={store}>
       <MuiThemeProvider theme={lightTheme}>
@@ -20,7 +20,7 @@ root.render(
       </MuiThemeProvider>
     </Provider>
     </MultiwalletProvider>
-  </React.StrictMode>
+
 );
 
 // If you want to start measuring performance in your app, pass a function
