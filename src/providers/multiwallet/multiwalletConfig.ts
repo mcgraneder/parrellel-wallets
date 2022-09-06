@@ -28,6 +28,11 @@ import { EthereumMEWConnectConnector } from "@renproject/multiwallet-ethereum-me
 //   return false;
 // };
 
+export const injected = new EthereumInjectedConnector({
+  debug: false,
+  networkIdMapper: ethNetworkToRenNetwork,
+})
+
 export const getMultiwalletConfig = (network: RenNetwork): WalletPickerConfig<unknown, string> => {
   return {
     chains: {
@@ -35,10 +40,7 @@ export const getMultiwalletConfig = (network: RenNetwork): WalletPickerConfig<un
         {
           name: Wallet.MetaMask,
           logo: "",
-          connector: new EthereumInjectedConnector({
-            debug: false,
-            networkIdMapper: ethNetworkToRenNetwork,
-          }),
+          connector: injected,
         },
         {
           name: Wallet.MyEtherWallet,

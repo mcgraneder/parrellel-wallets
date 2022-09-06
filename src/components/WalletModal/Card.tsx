@@ -45,7 +45,7 @@ const Card = ({
         <button
           className='absolute flex items-center w-8 h-8 p-1 rounded-full bg-black-900 md:p-2 md:w-10 md:h-10 sm:top-6 right-4 xs:right-6 sm:right-24'
           onClick={handleOnExitIconClick}>
-          {/* <ExitIcon className='flex w-full h-full m-auto text-gray-400' /> */}
+          <ExitIcon className='flex w-full h-full m-auto text-gray-400' />
         </button>
       )}
       {children}

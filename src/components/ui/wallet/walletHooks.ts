@@ -134,53 +134,106 @@ const resolveWalletByProvider = (provider: any) => {
   };
   
 
-  export const useSwitchChainHelpers = (
+  export const useSwitchChainHelpers = async(
     chain: Chain,
     network: RenNetwork,
     provider: any
   ) => {
     const chains = useChains(network);
-  
-    const addOrSwitchChain = useMemo(() => {
-      const chainInstance = chains[chain];
-      const networkData = (chainInstance.chain as any).network.network;
-      if (networkData) {
-        const { chainId, chainName, rpcUrls, blockExplorerUrls, nativeCurrency } =
-          networkData;
-        const params: any = [
-          {
-            chainId,
-            chainName,
-            rpcUrls,
-            blockExplorerUrls,
-            nativeCurrency,
-          },
-        ];
-  
-        return async () => {
+    const chainInstance = chains[chain];
+    // console.log("chainInstance", chainInstance, chains, chain)
+    const networkData = (chainInstance.chain as any).network.config
+    console.log(networkData)
+    if (networkData) {
+      const { chainId, chainName, rpcUrls, blockExplorerUrls, nativeCurrency } =
+        networkData;
+      const params: any = [
+        {
+          chainId,
+          chainName,
+          rpcUrls,
+          blockExplorerUrls,
+          nativeCurrency,
+        },
+      ];
+
+      try {
+        await provider?.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: chainId }],
+        });
+        return { switched: true };
+      } catch (error: any) {
+        if (error.code === 4902) {
+          // TODO: get new chain params
           try {
-            await provider.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId }],
+            await provider?.request({
+              method: "wallet_addEthereumChain",
+              params: [],
             });
-          } catch (error: any) {
-            // This error code indicates that the chain has not been added to MetaMask.
-            if (error.code === 4902) {
-              await provider.request({
-                method: "wallet_addEthereumChain",
-                params,
-              });
-            } else {
-              throw error;
-            }
+            return { switched: true };
+          } catch (addError: any) {
+            // handle "add" error
+            return { switched: false, errorCode: addError.code };
           }
-        };
-      } else {
-        return null;
+        } else if (error.code === 4001) {
+          // user rejected the switch
+        }
+        return { switched: false, errorCode: error.code };
       }
-    }, [chains, chain, provider]);
-  
-    return { addOrSwitchChain };
+    }
   };
+
+ export const SwitchNetwork = async (
+    chain: Chain,
+    network: RenNetwork
+    ) => {
+    //@ts-ignore
+    const { ethereum } = window;
+
+    const chains = useChains(network);
+    const chainInstance = chains[chain];
+    // console.log("chainInstance", chainInstance, chains, chain)
+    const networkData = (chainInstance.chain as any).network.config
+    console.log(networkData)
+    if (networkData) {
+      const { chainId, chainName, rpcUrls, blockExplorerUrls, nativeCurrency } =
+        networkData;
+      const params: any = [
+        {
+          chainId,
+          chainName,
+          rpcUrls,
+          blockExplorerUrls,
+          nativeCurrency,
+        },
+      ];
+  
+    try {
+      await ethereum?.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: chainId }],
+      });
+      return { switched: true };
+    } catch (error: any) {
+      if (error.code === 4902) {
+        // TODO: get new chain params
+        try {
+          await ethereum?.request({
+            method: "wallet_addEthereumChain",
+            params: [],
+          });
+          return { switched: true };
+        } catch (addError: any) {
+          // handle "add" error
+          return { switched: false, errorCode: addError.code };
+        }
+      } else if (error.code === 4001) {
+        // user rejected the switch
+      }
+      return { switched: false, errorCode: error.code };
+    }
+  };
+    }
 
   

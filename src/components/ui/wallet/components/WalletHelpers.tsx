@@ -18,7 +18,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { useWallet } from "../walletHooks";
+import { useWallet, SwitchNetwork } from '../walletHooks';
 import { WalletStatus } from "../walletUtils";
 import { getChainConfig } from "../../../../utils/chainsConfig";
 import { getChainNetworkConfig } from "../../../../utils/chainsConfig";
@@ -222,27 +222,13 @@ export const WalletWrongNetworkInfo: WalletPickerProps<
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<any>(false);
-  const { addOrSwitchChain } = useSwitchChainHelpers(
-    chain as Chain,
-    targetNetwork as RenNetwork,
-    provider
-  );
+  const  addOrSwitchChain  = () => {}
   const [success, setSuccess] = useState(false);
   const handleSwitch = useCallback(() => {
     if (addOrSwitchChain !== null) {
       setError(false);
       setPending(true);
       addOrSwitchChain()
-        .then(() => {
-          setError(false);
-          setSuccess(true);
-        })
-        .catch((error: any) => {
-          setError(error);
-        })
-        .finally(() => {
-          setPending(false);
-        });
     }
   }, [addOrSwitchChain]);
 

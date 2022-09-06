@@ -18,6 +18,8 @@ import { setChain } from "../ui/wallet/walletSlice";
 import { Chain } from "@renproject/chains";
 import ConnectingModal from "./ConnectingModal";
 import UnsupportedNetworkModal from "./UnsupportedNetworkModal";
+import { ReactComponent as  ExitIcon } from "../../assets/exitIcon.svg"
+import { Wallet, getWalletConfig } from '../../providers/multiwallet/walletsConfig';
 
 export interface WalletPickerConfig<P, A> {
   chains: { [key in string]: Array<ConnectorConfig<P, A>> };
@@ -33,6 +35,7 @@ extends HTMLAttributes<HTMLDivElement> {
  * Which chain to show wallets for
  */
 chain: string;
+Icon?: any;
 /**
    Function used to close/cancel the connection request
  */
@@ -111,6 +114,7 @@ interface WalletEntryProps<P, A> extends ConnectorConfig<P, A> {
   setName: (i: string) => void;
   WalletEntryButton?: WalletPickerProps<P, A>["WalletEntryButton"];
   connected: boolean | undefined;
+  Icon: any;
 }
 
 
@@ -126,7 +130,8 @@ const WalletEntry = <P, A>({
   setInfo,
   setName,
   WalletEntryButton,
-  connected
+  connected,
+  Icon: aa
 }: WalletEntryProps<P, A>): JSX.Element => {
   console.log("hey")
 
@@ -161,13 +166,15 @@ const WalletEntry = <P, A>({
       
     }, [activateConnector, buildInfo, Info, chain, connector]);
 
+    const walletConfig = getWalletConfig(name as Wallet);
+  const { Icon } = walletConfig;
   return (
     <div
     onClick={onClick}
     className='flex items-center justify-between px-4 py-3 mx-2 mb-2 ml-1 mr-1 sm:flex-row rounded-xl bg-black-800 hover:cursor-pointer hover:bg-black-700'>
     <div className='flex items-center self-start sm:self-auto'>
       <div className='flex items-center justify-center p-2 mr-4 rounded-full pointer-events-none select-none bg-black-900'>
-        {/* <wallet.logo /> */}
+        <Icon width={"40px"}/>
       </div>
       <div className='float-right text-lg font-semibold tracking-wide has-tooltip sm:self-auto '>
         <p>{name}</p>
@@ -203,6 +210,7 @@ const WalletOption = <P, A>({
   WalletEntryButton,
   WalletChainLabel,
   children,
+  Icon
  }:  WalletPickerProps<P, A>) => {
 
     const connectors = config.chains[chain];
@@ -227,6 +235,7 @@ const WalletOption = <P, A>({
             setName={setName}
             WalletEntryButton={WalletEntryButton}
             connected={connected}
+            Icon={Icon}
           />
           </div>
         );
@@ -267,8 +276,9 @@ export interface WalletPickerModalProps<P, A> {
    */
   network: RenNetwork;
   setChain: (chain: any) => void;
-  disconnect: () => void;
+  toggleWalletModal: () => void;
   open?: boolean;
+  wallet: Wallet;
   
 }
 
@@ -277,13 +287,16 @@ export const WalletConnectModal = <P, A>({
   options,
   network,
   setChain,
-  disconnect
+  toggleWalletModal,
+  wallet
 }: WalletPickerModalProps<P, A>): JSX.Element => {
   const { enabledChains, targetNetwork, setTargetNetwork } = useMultiwallet<
     P,
     A
   >();
 
+  console.log(wallet)
+  const { Icon } = getWalletConfig(wallet as Wallet)
   const disconnected = enabledChains[options.chain]?.status === "disconnected";
   const connecting = enabledChains[options.chain]?.status === "connecting";
   const connected = enabledChains[options.chain]?.status === "connected";
@@ -301,7 +314,6 @@ export const WalletConnectModal = <P, A>({
       options.onClose();
       console.log("connected")
     }
-    console.log(wrongNetwork)
   }, [connected, options, wrongNetwork, disconnected]);
 
   useEffect(() => {
@@ -339,32 +351,31 @@ export const WalletConnectModal = <P, A>({
     setTabIndex(index);
    }
 
-  const [tabIndex, setTabIndex] = useSessionStorage("txTabIndex", 0);
+  const [tabIndex, setTabIndex] = useSessionStorage("txTabIndex", 0); 
 
-  const rightLabelDisplay = "Connected";
+  const rightLabelDisplay = connected ? `connected` : "";
   return (
     <>
     { (connecting && (
       <>
-      <ConnectingModal close={() => {}} open={!connected}/>
+      <ConnectingModal close={cancel} open={!connected}/>
       </>
     )) ||
     (wrongNetwork && (
-      <UnsupportedNetworkModal close={() => {}}/>
+      <UnsupportedNetworkModal close={toggleWalletModal} chain={options.chain as Chain} targetNetwork={network}/>
     )) ||
-       (<Modal open onClose={() => {}}>
+       (<Modal open onClose={toggleWalletModal}>
           <div>
             <Card
               responsiveOverride='bg-black-800 w-[470px]'
-              onExitIconClick={() => {}}
-              ExitIcon={{}}>
+              onExitIconClick={toggleWalletModal}
+              ExitIcon={ExitIcon}>
               <Card.Title>{"Connect Wallet"}</Card.Title>
-              <Card.Description>{"Connect to Catalog"}</Card.Description>
-              <div className='mb-12'></div>
-              {/* <hr className='my-1 sm:my-1 border-black-800' />
+              {/* <Card.Description>{"Connect to Catalog"}</Card.Description> */}
+              <hr className='my-1 sm:my-1 border-black-800' />
               <div className='w-full mb-6 text-black-600'>
-                <div className='text-sm text-grey-500'>{t("protocolDisclaimer")}</div>
-              </div> */}
+                <div className='text-base text-grey-500'>{"By Connecting, you agree to Catalogs’ Terms of Service and acknowledge that you have read and understand the Catalog Protocol Disclaimer."}</div>
+              </div>
                 <div className='w-full bg-black-800 rounded-32px'>
                   <Tab.Group defaultIndex={tabIndex} onChange={_onTabChange}>
                     <Tab.List
@@ -377,7 +388,7 @@ export const WalletConnectModal = <P, A>({
                         );
                       })}
                     </Tab.List>
-                    <Tab.Panels className={`mt-2 px-2 `}></Tab.Panels>                    
+                    <Tab.Panels className={`mt-6 px-2 `}></Tab.Panels>                    
                   </Tab.Group>
                 </div>
               <ContentWrapper
@@ -393,13 +404,14 @@ export const WalletConnectModal = <P, A>({
                     connecting={connecting}
                     wrongNetwork={wrongNetwork}
                     connected={connected}
+                    Icon={Icon}
                   />
                         </div>
               </ContentWrapper>
               <div className='flex items-center justify-center mt-6'>
                 {connected && (
                   <PrimaryButton onClick={deactivateConnector} className='bg-[#1F3F38] px-12'>
-                    {"buttons.disconnect"}
+                    {"disconnect"}
                   </PrimaryButton>
                 )}
               </div>

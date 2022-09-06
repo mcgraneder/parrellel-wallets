@@ -148,7 +148,7 @@ const MainLayout:  FunctionComponent<any> = ({
 
     return (
         <>
-        {openWalletModal && <WalletConnectModal open={pickerOpened} options={walletPickerOptions} network={network} setChain={handleWalletButtonClick} disconnect={handleDisconnectWallet}/>}
+        {openWalletModal && <WalletConnectModal wallet={wallet as Wallet} open={pickerOpened} options={walletPickerOptions} network={network} setChain={handleWalletButtonClick} toggleWalletModal={toggleWalletModal}/>}
         <div className="flex items-center justify-center h-screen">
           <PrimaryButton onClick={toggleWalletModal}>Select Wallets</PrimaryButton>
         </div>
