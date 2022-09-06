@@ -3,13 +3,23 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-
+import { Provider } from 'react-redux';
+import store from './store/store';
+import { MuiThemeProvider } from '@material-ui/core';
+import { lightTheme } from './components/theme/theme';
+import { MultiwalletProvider } from './contexts';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <MultiwalletProvider>
+    <Provider store={store}>
+      <MuiThemeProvider theme={lightTheme}>
+      <App/>
+      </MuiThemeProvider>
+    </Provider>
+    </MultiwalletProvider>
   </React.StrictMode>
 );
 
