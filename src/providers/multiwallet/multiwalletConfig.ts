@@ -7,7 +7,8 @@ import { Wallet } from "./walletsConfig";
 import { WalletPickerConfig } from "@renproject/multiwallet-ui";
 import { EthereumWalletConnectConnector } from "@renproject/multiwallet-ethereum-walletconnect-connector";
 import { EthereumMEWConnectConnector } from "@renproject/multiwallet-ethereum-mewconnect-connector";
-
+import { BinanceSmartChainInjectedConnector } from "@renproject/multiwallet-binancesmartchain-injected-connector";
+import { createNetworkIdMapper } from '../../utils/networksConfig';
 // const isEnabled = (chain: Chain, wallet: Wallet) => {
 //   const entries = env.ENABLED_EXTRA_WALLETS;
 //   if (entries.length === 1 && entries[0] === "*") {
@@ -67,13 +68,35 @@ export const getMultiwalletConfig = (network: RenNetwork): WalletPickerConfig<un
                   }),
                 },
       ],
+      [Chain.BinanceSmartChain]: [
+        {
+          name: Wallet.BinanceSmartChain,
+          logo: "",
+          connector: new BinanceSmartChainInjectedConnector({ debug: true }),
+        },
+        
+        {
+          name: Wallet.MetaMask,
+          logo: "",
+          connector: (() => {
+            const connector = new BinanceSmartChainInjectedConnector({
+              debug: true,
+              networkIdMapper: createNetworkIdMapper(
+                Chain.BinanceSmartChain
+              )
+            });
+            connector.getProvider = () => (window as any).ethereum;
+            return connector;
+          })(),
+        },
+      ],
       [Chain.Solana]: [
         {
           name: Wallet.Phantom,
           logo: "",
           connector: new SolanaConnector({
             debug: true,
-            providerURL: (window as any).solana || "https://www.phantom.app",
+            providerURL: "https://chrome.google.com/webstore/detail/coinbase-wallet-extension/hnfanknocfeofbddgcijnmhnfnkdnaad",
             clusterURL:
               network === RenNetwork.Mainnet
                 ? "https://ren.rpcpool.com/"

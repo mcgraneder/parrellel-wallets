@@ -7,7 +7,7 @@ import { useWallet, SwitchNetwork } from '../ui/wallet/walletHooks';
 import { Chain } from '@renproject/chains';
 import { RenNetwork } from '@renproject/utils/types';
 import { injected, getMultiwalletConfig } from '../../providers/multiwallet/multiwalletConfig';
-import { useMultiwallet } from '../../contexts/MultiwalletProvider';
+import { useMultiwallet } from '@renproject/multiwallet-ui';
 
 interface UnsupportedNetworkModalProps {
   chain: Chain;

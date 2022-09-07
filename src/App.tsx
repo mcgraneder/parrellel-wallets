@@ -22,6 +22,9 @@ import {chainStringToRenChain,} from "./chainmap";
 import { Ethereum } from "@renproject/chains-ethereum";
 import { getMultiwalletConfig } from "./providers/multiwallet/multiwalletConfig";
 import { ConnectedMainLayout } from './pages/MainLayout';
+import { useWallet } from './components/ui/wallet/walletHooks';
+import { useSelector } from 'react-redux';
+import { $wallet } from "./components/ui/wallet/walletSlice";
 
 
 const supportedAssets = ["BTC", "ZEC", "BCH", "FIL", "LUNA", "DGB", "DOGE"];
@@ -77,10 +80,7 @@ const DropdownSelect = ({ name, value, setValue, values }: any) => {
 };
 
 const App = (): JSX.Element => {
-    const [chain, setChain] =
-        useState<keyof ReturnType<typeof multiwalletOptions>["chains"]>(
-            "solana",
-        );
+    
     const [asset, setAsset] = useState("BTC");
     const [network, setNetwork] = useState(renNetworks[1]);
 
@@ -99,6 +99,8 @@ const App = (): JSX.Element => {
             setAmount(parseFloat(e.target.value) * 1e8),
         [setAmount],
     );
+
+    
 
     const setClosed = useCallback(() => setOpen(false), [setOpen]);
 

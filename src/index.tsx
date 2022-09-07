@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
 import store from './store/store';
 import { MuiThemeProvider } from '@material-ui/core';
 import { lightTheme } from './components/theme/theme';
-import { MultiwalletProvider } from './contexts';
+import { MultiwalletProvider } from '@renproject/multiwallet-ui';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

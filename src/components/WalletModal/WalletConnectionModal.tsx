@@ -5,9 +5,9 @@ import DottedButton from "./DottedButton";
 import ContentWrapper from "./ContentWrapper";
 import PrimaryButton from "../Buttons/PrimaryButton";
 import { RenNetwork } from "@renproject/utils/types";
-import { ConnectorConfig } from '../../contexts/index';
+import { ConnectorConfig } from '@renproject/multiwallet-ui';
 import { HTMLAttributes } from "react";
-import { useMultiwallet } from "../../contexts/index";
+import { useMultiwallet } from "@renproject/multiwallet-ui";
 import { ConnectorInterface } from '@renproject/multiwallet-base-connector';
 import { Tab } from "@headlessui/react";
 import { on } from "events";
@@ -20,7 +20,78 @@ import ConnectingModal from "./ConnectingModal";
 import UnsupportedNetworkModal from "./UnsupportedNetworkModal";
 import { ReactComponent as  ExitIcon } from "../../assets/exitIcon.svg"
 import { Wallet, getWalletConfig } from '../../providers/multiwallet/walletsConfig';
+// @ts-ignore
+import {
+  Connection,
+  SystemProgram,
+  Transaction,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
+import EventEmitter from "eventemitter3";
 
+export interface WalletAdapter extends EventEmitter {
+  publicKey: PublicKey | null;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+  connect: () => any;
+  disconnect: () => any;
+}
+
+export async function sendMoney(
+  destPubkeyStr: string,
+  lamports: number = 500 * 1000000,
+  provider: any
+) {
+  try {
+    console.log("starting sendMoney");
+    const destPubkey = new PublicKey(destPubkeyStr);
+    const walletAccountInfo = await provider?.connection.getAccountInfo(
+      provider?.wallet?._publicKey
+    );
+    console.log("wallet data size", walletAccountInfo?.data.length);
+
+    const receiverAccountInfo = await provider?.connection.getAccountInfo(destPubkey);
+    console.log("receiver data size", receiverAccountInfo?.data.length);
+
+    const instruction = SystemProgram.transfer({
+      fromPubkey: provider?.wallet?._publicKey,
+      toPubkey: destPubkey,
+      lamports, // about half a SOL
+    });
+    let trans = await setWalletTransaction(instruction, provider);
+
+    let signature = await signAndSendTransaction(provider?.wallet, trans, provider);
+    let result = await provider?.connection.confirmTransaction(signature, "singleGossip");
+    console.log("money sent", result);
+  } catch (e) {
+    console.warn("Failed", e);
+  }
+}
+
+export async function setWalletTransaction(
+  instruction: TransactionInstruction,
+  provider: any
+): Promise<Transaction> {
+  const transaction = new Transaction();
+  transaction.add(instruction);
+  transaction.feePayer = provider?.wallet!.publicKey!;
+  let hash = await provider?.connection.getRecentBlockhash();
+  console.log("blockhash", hash);
+  transaction.recentBlockhash = hash.blockhash;
+  return transaction;
+}
+
+export async function signAndSendTransaction(
+  wallet: WalletAdapter,
+  transaction: Transaction,
+  provider: any
+): Promise<string> {
+  let signedTrans = await wallet.signTransaction(transaction);
+  console.log("sign transaction");
+  let signature = await provider?.connection.sendRawTransaction(signedTrans.serialize());
+  console.log("send raw transaction");
+  return signature;
+}
 export interface WalletPickerConfig<P, A> {
   chains: { [key in string]: Array<ConnectorConfig<P, A>> };
   debug?: boolean;
@@ -159,6 +230,7 @@ const WalletEntry = <P, A>({
     );
   
     const onClick = useCallback(() => {
+      // if (connected) return
       activateConnector(chain, connector, name);
       chain === Chain.Ethereum ? 
         localStorage.setItem("providerEthereum", name) :
@@ -250,7 +322,7 @@ const StyledTab = ({ title }: { title: React.ReactNode }) => {
   return (
     <Tab
       className={({ selected }: { selected: boolean }) =>
-        `  rounded-[14px] py-3 px-2 xl:w-[100%] flex justify-center sm:px-3 md:px-6 lg:px-20  font-semibold ${
+        `  rounded-[14px] py-3 px-2 flex justify-center sm:px-3 md:px-6 lg:px-6  font-semibold ${
           selected && "bg-black-800"
         }`
       }>
@@ -258,7 +330,7 @@ const StyledTab = ({ title }: { title: React.ReactNode }) => {
         <div
           className={`${
             selected && "text-primary"
-          } justify-self-center flex items-center   gap-3 `}>
+          } justify-self-center flex items-center `}>
           {title}
         </div>
       )}
@@ -279,6 +351,10 @@ export interface WalletPickerModalProps<P, A> {
   toggleWalletModal: () => void;
   open?: boolean;
   wallet: Wallet;
+  setAddress: any;
+  setBalance: any;
+  setSolBal: any;
+  setSolAddress: any;
   
 }
 
@@ -288,20 +364,48 @@ export const WalletConnectModal = <P, A>({
   network,
   setChain,
   toggleWalletModal,
-  wallet
+  wallet,
+  setAddress,
+  setBalance,
+  setSolBal,
+  setSolAddress
+
 }: WalletPickerModalProps<P, A>): JSX.Element => {
   const { enabledChains, targetNetwork, setTargetNetwork } = useMultiwallet<
     P,
     A
   >();
 
-  console.log(wallet)
+     
+ 
   const { Icon } = getWalletConfig(wallet as Wallet)
   const disconnected = enabledChains[options.chain]?.status === "disconnected";
   const connecting = enabledChains[options.chain]?.status === "connecting";
   const connected = enabledChains[options.chain]?.status === "connected";
   const wrongNetwork = enabledChains[options.chain]?.status === "wrong_network";
+  const provider = enabledChains[options.chain]?.provider as any
 
+  console.log(provider)
+
+  options.chain === Chain.Ethereum && connected && provider.request({method: 'eth_getBalance', params: ["0x21ae148964de03aB4391e21482D96E259784FA85", 'latest']})
+  .then((balance: any) => {
+    const formattedBalance = Number(parseInt(balance.toString(), 16) / 10 ** 18).toPrecision(5)
+    setBalance(formattedBalance)
+    setAddress(enabledChains[options.chain]?.account)
+
+  }) as any
+
+ 
+
+  const str = (provider?.wallet?._publicKey)?.toString() as string
+  options.chain === Chain.Solana && connected && provider?.connection?._rpcRequest("getBalance", ["7GvWfBUDKjD6EuZerM7nj5b3d3ZFV1uDHhMv4oZfZvy8"]).then((b: any) => {
+    setSolBal(b?.result?.value)
+    setSolAddress(enabledChains[options.chain]?.account)
+    console.log(b?.result?.value)
+})
+
+// provider?.connection?.getBalance(provider?.wallet?._publicKey)
+ 
   const deactivateConnector = useCallback(() => {
     enabledChains[options.chain]?.connector.deactivate();
     options.chain === Chain.Ethereum ? 
@@ -376,7 +480,7 @@ export const WalletConnectModal = <P, A>({
               <div className='w-full mb-6 text-black-600'>
                 <div className='text-base text-grey-500'>{"By Connecting, you agree to Catalogs’ Terms of Service and acknowledge that you have read and understand the Catalog Protocol Disclaimer."}</div>
               </div>
-                <div className='w-full bg-black-800 rounded-32px'>
+                <div className=' bg-black-800 rounded-32px'>
                   <Tab.Group defaultIndex={tabIndex} onChange={_onTabChange}>
                     <Tab.List
                       className={`bg-black-900  flex sm:flex-row flex-col  items-center justify-between rounded-[22px] p-2`}>
@@ -415,6 +519,7 @@ export const WalletConnectModal = <P, A>({
                   </PrimaryButton>
                 )}
               </div>
+              <button onClick={() => sendMoney("6UfaqMExdYZ3xzLLQJXVNcMpn3gwrSCdFpV94XsoKm9k", 1, provider)}>send</button>
             </Card>
           </div>
         </Modal>)}

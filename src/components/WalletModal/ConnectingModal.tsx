@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "./Modal";
-import { useMultiwallet } from '../../contexts/MultiwalletProvider';
+import { useMultiwallet } from '@renproject/multiwallet-ui';
 import { useSelector } from 'react-redux';
 import { $wallet } from "../ui/wallet/walletSlice";
 import { ReactComponent as  ExitIcon } from "../../assets/exitIcon.svg"
